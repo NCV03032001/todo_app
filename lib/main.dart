@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:todo_app/todoList.dart';
+import 'package:todo_app/addTodo.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,7 +13,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      builder: (context, child) =>
+          MediaQuery(data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true), child: child!),
       title: 'Simple TODO App',
+      routes:  {
+        '/add_todo': (context) => addTodo(),
+        '/list_todo' : (context) => todoList(),
+      },
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -24,11 +32,11 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const todoList(),
     );
   }
 }
-
+/*
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
@@ -113,3 +121,4 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+*/
