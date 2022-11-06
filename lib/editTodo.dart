@@ -4,14 +4,15 @@ import 'package:todo_app/model/db.dart';
 import 'package:todo_app/model/aTodo.dart';
 
 
-class addTodo extends StatefulWidget {
-  const addTodo({Key? key}) : super(key: key);
+class editTodo extends StatefulWidget {
+  final aTodo valTodo;
+  const editTodo({Key? key, required this.valTodo}) : super(key: key);
 
   @override
-  State<addTodo> createState() => _addTodoState();
+  State<editTodo> createState() => _editTodoState();
 }
 
-class _addTodoState extends State<addTodo> {
+class _editTodoState extends State<editTodo> {
   final FocusNode _screenFocus = FocusNode();
 
   final _addFormKey = GlobalKey<FormState>();
@@ -26,6 +27,7 @@ class _addTodoState extends State<addTodo> {
   DateTime selectedDate = DateTime.now();
   final TextEditingController _dateController = TextEditingController();
   final FocusNode _dateFocus = FocusNode();
+
   _selectDate(BuildContext context) async {
     DateTime? picked = await showDatePicker(
       context: context,
@@ -85,13 +87,17 @@ class _addTodoState extends State<addTodo> {
 
   final TextEditingController datetimeConflictError = TextEditingController();
 
-  void _insertTodo(aTodo todo) async {
-    await DB.insertTodo(todo);
+  void _editTodo(aTodo todo) async {
+    await DB.updateTodo(todo);
   }
 
   @override
   void initState() {
     super.initState();
+    _titleController.text = widget.valTodo.title;
+    _desController.text = widget.valTodo.description!;
+    _dateController.text = widget.valTodo.date;
+    _timeController.text = widget.valTodo.time;
   }
 
   @override
@@ -106,7 +112,7 @@ class _addTodoState extends State<addTodo> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Add a TODO'),
+          title: Text('Edit TODO'),
           centerTitle: true,
           automaticallyImplyLeading: true,
         ),
@@ -379,7 +385,7 @@ class _addTodoState extends State<addTodo> {
                           ),
                         ),
                         child: Text(
-                          'Add',
+                          'Edit',
                           style: TextStyle(
                             fontSize: 20,
                             color: Colors.blue,
@@ -387,8 +393,8 @@ class _addTodoState extends State<addTodo> {
                         ),
                         onPressed: () => {
                           if (_addFormKey.currentState!.validate() && checkDateTimeConflict(_dateController.text, _timeController.text)) {
-                            newTodo = new aTodo(title: _titleController.text, description: _desController.text, date: _dateController.text, time: _timeController.text, status: 0),
-                            _insertTodo(newTodo),
+                            newTodo = new aTodo(id: widget.valTodo.id, title: _titleController.text, description: _desController.text, date: _dateController.text, time: _timeController.text, status: widget.valTodo.status),
+                            _editTodo(newTodo),
                             Navigator.pop(context, true),
                           }
                         },
