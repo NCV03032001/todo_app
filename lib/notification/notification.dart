@@ -1,47 +1,68 @@
-import 'dart:io';
-import 'dart:ui';
-
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_native_timezone/flutter_native_timezone.dart';
-import 'package:rxdart/subjects.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tzData;
+import 'package:todo_app/model/aTodo.dart';
 
 class NotificationService {
-  NotificationService();
 
-  final _localNotifications = FlutterLocalNotificationsPlugin();
+  static final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
-  Future<void> initializePlatformNotifications() async {
-    const AndroidInitializationSettings initializationSettingsAndroid =
-    AndroidInitializationSettings('ic_stat_justwater');
+  static Future initialize(FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) async {
+    final AndroidInitializationSettings initializationSettingsAndroid =
+    AndroidInitializationSettings('app_icon');
 
-    /*
-    final IOSInitializationSettings initializationSettingsIOS =
-    IOSInitializationSettings(
-        requestSoundPermission: true,
-        requestBadgePermission: true,
-        requestAlertPermission: true,
-        onDidReceiveLocalNotification: onDidReceiveLocalNotification);*/
-
-    final InitializationSettings initializationSettings =
-    InitializationSettings(
-      android: initializationSettingsAndroid,
-      //iOS: initializationSettingsIOS,
+    final DarwinInitializationSettings  initializationSettingsIOS =
+    DarwinInitializationSettings (
+      requestSoundPermission: false,
+      requestBadgePermission: false,
+      requestAlertPermission: false,
     );
 
-    await _localNotifications.initialize(initializationSettings);//,
-    //     onSelectNotification: selectNotification);
+    final InitializationSettings initializationSettings = InitializationSettings(
+        android: initializationSettingsAndroid,
+        iOS: initializationSettingsIOS,
+        macOS: null); // <------
+
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   }
 
-  // void onDidReceiveLocalNotification(
-  //     int id, String? title, String? body, String? payload) {
-  //   print('id $id');
-  // }
-  //
-  // void selectNotification(String? payload) {
-  //   if (payload != null && payload.isNotEmpty) {
-  //     behaviorSubject.add(payload);
-  //   }
-  // }
+  static Future addNotification(aTodo todo) async {
+    var scheduledDate = DateTime.parse("${todo.date} ${todo.time}").subtract(Duration(minutes: 10));
+
+    print(todo);
+    var scheduledDateTz = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5));
+
+    if (scheduledDate.isAfter(DateTime.now())){
+      scheduledDateTz = tz.TZDateTime.from(
+        scheduledDate,
+        tz.local,
+      );
+    }
+
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      todo.id,
+      todo.title,
+      todo.description,
+      scheduledDateTz,
+      const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'whatever',
+            'whatever',
+            playSound: true,
+            importance: Importance.max,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(
+            sound: 'notification',
+            presentSound: true,
+          ),
+      ),
+      androidAllowWhileIdle: true,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+
+  static Future cancelNotification(aTodo todo) async {
+    await flutterLocalNotificationsPlugin.cancel(todo.id);
+  }
 }

@@ -2,7 +2,8 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:todo_app/model/db.dart';
 import 'package:todo_app/model/aTodo.dart';
-
+import 'package:todo_app/notification/notification.dart';
+import 'package:timezone/data/latest.dart' as tzData;
 
 class editTodo extends StatefulWidget {
   final aTodo valTodo;
@@ -94,6 +95,7 @@ class _editTodoState extends State<editTodo> {
   @override
   void initState() {
     super.initState();
+    tzData.initializeTimeZones();
     _titleController.text = widget.valTodo.title;
     _desController.text = widget.valTodo.description!;
     _dateController.text = widget.valTodo.date;
@@ -394,7 +396,10 @@ class _editTodoState extends State<editTodo> {
                         onPressed: () => {
                           if (_addFormKey.currentState!.validate() && checkDateTimeConflict(_dateController.text, _timeController.text)) {
                             newTodo = new aTodo(id: widget.valTodo.id, title: _titleController.text, description: _desController.text, date: _dateController.text, time: _timeController.text, status: widget.valTodo.status),
+                            print(widget.valTodo.id),
                             _editTodo(newTodo),
+                            //NotificationService.cancelNotification(newTodo),
+                            NotificationService.addNotification(newTodo),
                             Navigator.pop(context, true),
                           }
                         },

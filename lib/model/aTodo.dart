@@ -1,15 +1,15 @@
 class aTodo {
-  final int? id;
+  final int id;
   final String title;
-  final String? description;
+  final String description;
   final String date;
   final String time;
   final int status;
 
   const aTodo({
-    this.id,
+    required this.id,
     required this.title,
-    this.description,
+    required this.description,
     required this.date,
     required this.time,
     required this.status,
@@ -19,15 +19,15 @@ class aTodo {
     return {
       "id": id,
       "title": title,
-      "description": description ?? '',
-      "date": date.toString(),
-      "time": time.toString(),
-      "status": status.toString(),
+      "description": description,
+      "date": date,
+      "time": time,
+      "status": status,
     };
   }
 
   @override
   String toString() {
-    return "Note{id:$id, name:$title, description:$description, date:$date, time:$time, status:$status}";
+    return "Note{id: $id, name: $title, description: $description, date: $date, time: $time, status: $status}";
   }
 }

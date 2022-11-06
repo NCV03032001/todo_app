@@ -3,7 +3,8 @@ import 'package:todo_app/editTodo.dart';
 
 import 'package:todo_app/model/aTodo.dart';
 import 'package:todo_app/model/db.dart';
-
+import 'package:todo_app/notification/notification.dart';
+import 'package:timezone/data/latest.dart' as tzData;
 
 class todoList extends StatefulWidget {
   const todoList({Key? key}) : super(key: key);
@@ -39,9 +40,18 @@ class _todoListState extends State<todoList> {
     await DB.deleteTodo(val);
   }
 
+  List<aTodo> lastRow = [];
+  void _getLastRow() async {
+    var res = await DB.getLastInsertedRow();
+    setState(() {
+      lastRow = res;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    tzData.initializeTimeZones();
     _typeController.text = 'All';
     _getTodoList(type: _typeController.text);
   }
@@ -247,6 +257,7 @@ class _todoListState extends State<todoList> {
         floatingActionButton: FloatingActionButton(
           onPressed: () {
             Navigator.pushNamed(context, '/add_todo', ).then((value) => _getTodoList(search: _searchController.text, type: _typeController.text));
+            //.then((value) =>_getLastRow()).then((value) => NotificationService.addNotification(lastRow[0]));
           },
           child: const Icon(Icons.add),
         ),
@@ -289,6 +300,7 @@ class _todoListState extends State<todoList> {
                     TextButton(
                       onPressed: () => {
                         _markDoneTodo(val),
+                        NotificationService.cancelNotification(val),
                         Navigator.pop(context, 'OK')
                       },
                       child: const Text('OK'),
@@ -330,7 +342,8 @@ class _todoListState extends State<todoList> {
                     ),
                     TextButton(
                       onPressed: () => {
-                        _markDoneTodo(val),
+                        _deleteTodo(val),
+                        NotificationService.cancelNotification(val),
                         Navigator.pop(context, 'OK')
                       },
                       child: const Text('OK'),

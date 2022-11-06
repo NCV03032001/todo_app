@@ -2,6 +2,8 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:todo_app/model/db.dart';
 import 'package:todo_app/model/aTodo.dart';
+import 'package:todo_app/notification/notification.dart';
+import 'package:timezone/data/latest.dart' as tzData;
 
 
 class addTodo extends StatefulWidget {
@@ -37,7 +39,6 @@ class _addTodoState extends State<addTodo> {
       selectedDate = picked;
       setState(() {
         _dateController.text = "${selectedDate.toLocal()}".split(' ')[0];
-        print('Changed Date');
         if (!checkDateTimeConflict(_dateController.text, _timeController.text)) {
           setState(() {
             datetimeConflictError.text = 'You can\'t make a TODO for the past';
@@ -65,7 +66,6 @@ class _addTodoState extends State<addTodo> {
       selectedTime = picked;
       setState(() {
         _timeController.text = selectedTime.hour.toString().padLeft(2, '0') + ':' + selectedTime.minute.toString().padLeft(2, '0');
-        print('Changed Time');
         if (!checkDateTimeConflict(_dateController.text, _timeController.text)) {
           setState(() {
             datetimeConflictError.text = 'You can\'t make a TODO for the past';
@@ -89,9 +89,27 @@ class _addTodoState extends State<addTodo> {
     await DB.insertTodo(todo);
   }
 
+  List<aTodo> lastRow = [];
+  int index = 0;
+  void _getLastRow() async {
+    var res = await DB.getLastInsertedRow();
+    setState(() {
+      lastRow = res;
+      print(lastRow);
+    });
+    if (lastRow.isNotEmpty) {
+      setState(() {
+        print(lastRow[0].id);
+        index = lastRow[0].id;
+      });
+    }
+  }
+
   @override
   void initState() {
+    tzData.initializeTimeZones();
     super.initState();
+    _getLastRow();
   }
 
   @override
@@ -335,7 +353,7 @@ class _addTodoState extends State<addTodo> {
                     Expanded(child: Container(
                       alignment: Alignment.center,
                       child: OutlinedButton(
-                        onPressed: () {
+                        onPressed: ()  {
                           setState(() {
                             _rsFocus.requestFocus();
                             _titleController.clear();
@@ -385,11 +403,19 @@ class _addTodoState extends State<addTodo> {
                             color: Colors.blue,
                           ),
                         ),
-                        onPressed: () => {
+                        onPressed: () {
                           if (_addFormKey.currentState!.validate() && checkDateTimeConflict(_dateController.text, _timeController.text)) {
-                            newTodo = new aTodo(title: _titleController.text, description: _desController.text, date: _dateController.text, time: _timeController.text, status: 0),
-                            _insertTodo(newTodo),
-                            Navigator.pop(context, true),
+                            index = index + 1;
+                            print(index);
+                            if (_desController.text.isEmpty) {
+                              _desController.text = 'Dkm tha t';
+                            }
+                            print(_desController.text);
+                            newTodo = new aTodo(id: index,title: _titleController.text, description: _desController.text, date: _dateController.text, time: _timeController.text, status: 0);
+                            print(newTodo);
+                            _insertTodo(newTodo);
+                            NotificationService.addNotification(newTodo);
+                            Navigator.pop(context, true);
                           }
                         },
                       ),

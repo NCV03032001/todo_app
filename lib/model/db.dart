@@ -6,6 +6,7 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:todo_app/model/aTodo.dart';
 
+
 class DB {
   static var formatterDate = new DateFormat('yyyy-MM-dd');
   static var formatterTime = new DateFormat('HH:mm');
@@ -111,5 +112,23 @@ class DB {
       where: 'id = ?',
       whereArgs: [val.id],
     );
+  }
+
+  static Future<List<aTodo>> getLastInsertedRow() async {
+    final db = await DB.createData();
+    List<Map<String, dynamic>> maps = [];
+
+    maps = await db.rawQuery("SELECT * FROM todo WHERE id=(SELECT max(id) FROM todo);");
+
+    return List.generate(maps.length, (i) {
+      return aTodo(
+        id: maps[i]['id'],
+        title: maps[i]['title'],
+        description: maps[i]['description'],
+        date: maps[i]['date'],
+        time: maps[i]['time'],
+        status: maps[i]['status'],
+      );
+    });
   }
 }
