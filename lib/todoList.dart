@@ -23,8 +23,11 @@ class _todoListState extends State<todoList> {
   List<aTodo> todoList = [];
   List<bool> checkList = [];
 
+  int _selectedIndex = 0;
+  int _selectedTag = 0;
+
   void _getTodoList({String search = '', int status = 0, String type = ''}) async {
-    final res = await DB.getTodoList(search: search, type: type);
+    final res = await DB.getTodoList(search: search, type: type, status: status);
     setState(() {
       todoList = res;
       checkList = List.generate(todoList.length, (index) => false);
@@ -40,20 +43,14 @@ class _todoListState extends State<todoList> {
     await DB.deleteTodo(val);
   }
 
-  List<aTodo> lastRow = [];
-  void _getLastRow() async {
-    var res = await DB.getLastInsertedRow();
-    setState(() {
-      lastRow = res;
-    });
-  }
-
   @override
   void initState() {
     super.initState();
     tzData.initializeTimeZones();
+    _searchController.text = '';
     _typeController.text = 'All';
-    _getTodoList(type: _typeController.text);
+    _selectedTag = 0;
+    _getTodoList(search: _searchController.text, type: _typeController.text, status: _selectedTag);
   }
 
   @override
@@ -103,7 +100,7 @@ class _todoListState extends State<todoList> {
                     suffixIcon: (_searchController.text.isNotEmpty) ?
                     IconButton(onPressed: () {setState(() {
                       _searchController.clear();
-                      _getTodoList(search: _searchController.text, type: _typeController.text);
+                      _getTodoList(search: _searchController.text, type: _typeController.text, status: _selectedTag);
                       _searchFocus.requestFocus();
                       _searchFocus.unfocus();
                     });}, icon: Icon(Icons.clear)) :
@@ -111,7 +108,7 @@ class _todoListState extends State<todoList> {
                   ),
                   onChanged: (value) => {
                     setState(() {
-                      _getTodoList(search: _searchController.text, type: _typeController.text);
+                      _getTodoList(search: _searchController.text, type: _typeController.text, status: _selectedTag);
                     })
                   },
                   onTap: () {
@@ -138,7 +135,7 @@ class _todoListState extends State<todoList> {
                             onPressed: () {
                               setState(() {
                                 _typeController.text = 'All';
-                                _getTodoList(search: _searchController.text, type: _typeController.text);
+                                _getTodoList(search: _searchController.text, type: _typeController.text, status: _selectedTag);
                               });
                             },
                             child: Text('All', style: TextStyle(
@@ -160,8 +157,10 @@ class _todoListState extends State<todoList> {
                         onTap: () {},
                         child: TextButton(
                           onPressed: () {
-                            _typeController.text = 'Today';
-                            _getTodoList(search: _searchController.text, type: _typeController.text);
+                            setState(() {
+                              _typeController.text = 'Today';
+                              _getTodoList(search: _searchController.text, type: _typeController.text, status: _selectedTag);
+                            });
                           },
                           child: Text('Today', style: TextStyle(
                             fontSize: 17, color:_typeController.text == 'Today' ? Colors.blue : Colors.black,
@@ -170,28 +169,32 @@ class _todoListState extends State<todoList> {
                       ),
                     ),
                   ),
-                  Expanded(
-                    flex: 1,
-                    child: Container(
-                      decoration: BoxDecoration(
-                          border: Border(
-                            bottom: _typeController.text == 'Upcoming' ? BorderSide(width: 2, color: Colors.blue) : BorderSide.none,
-                          )
-                      ),
-                      child: InkWell(
-                        onTap: () {},
-                        child: TextButton(
-                          onPressed: () {
-                            _typeController.text = 'Upcoming';
-                            _getTodoList(search: _searchController.text, type: _typeController.text);
-                          },
-                          child: Text('Upcoming', style: TextStyle(
-                            fontSize: 17, color:_typeController.text == 'Upcoming' ? Colors.blue : Colors.black,
-                          ),),
+                  _selectedTag == 0
+                  ? Expanded(
+                        flex: 1,
+                        child: Container(
+                          decoration: BoxDecoration(
+                              border: Border(
+                                bottom: _typeController.text == 'Upcoming' ? BorderSide(width: 2, color: Colors.blue) : BorderSide.none,
+                              )
+                          ),
+                          child: InkWell(
+                            onTap: () {},
+                            child: TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _typeController.text = 'Upcoming';
+                                  _getTodoList(search: _searchController.text, type: _typeController.text, status: _selectedTag);
+                                });
+                              },
+                              child: Text('Upcoming', style: TextStyle(
+                                fontSize: 17, color:_typeController.text == 'Upcoming' ? Colors.blue : Colors.black,
+                              ),),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
+                      )
+                  : Container(),
                 ],
               ),
               SizedBox(height: 10,),
@@ -204,19 +207,46 @@ class _todoListState extends State<todoList> {
                           width: double.infinity,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.all(Radius.circular(20)),
-                            color: Color(0xFFC7C7D4),
+                            color: _selectedTag == 0 ? Color(0xFFF8FF42)
+                            : _selectedTag == 1 ? Color(0xFF42FF5C)
+                            : Color(0xFFFF5542),//Color(0xFFC7C7D4),
                           ),
                           child: todoList[i].description != ''
                           ? ExpansionTile(
                             childrenPadding: EdgeInsets.all(10),
-                            leading: Checkbox(
+                            leading: _selectedTag == 0
+                            ? Checkbox(
                               value: checkList[i],
                               onChanged: (e) {
                                 setState(() {
                                   checkList[i] = !checkList[i];
-                                  showModalBottomSheet(context: context, builder: ((builder) => bottomSheet(todoList[i])),).then((value) => _getTodoList(search: _searchController.text, type: _typeController.text));
+                                  showModalBottomSheet(context: context, builder: ((builder) => bottomSheet(todoList[i])),).then((value) => _getTodoList(search: _searchController.text, type: _typeController.text, status: _selectedTag));
                                 });
                               },
+                            )
+                            : IconButton(
+                              onPressed: () => showDialog<String>(
+                                context: context,
+                                builder: (BuildContext context) => AlertDialog(
+                                  title: const Text('Confirm Delete'),
+                                  content: const Text('Are you sure to delete this TODO? It will remove the TODO from database.'),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, 'Cancel'),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => {
+                                        _deleteTodo(todoList[i]),
+                                        NotificationService.cancelNotification(todoList[i]),
+                                        Navigator.pop(context, 'OK')
+                                      },
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
+                                ),
+                              ).then((value) => _getTodoList(search: _searchController.text, type: _typeController.text, status: _selectedTag)),
+                              icon: Icon(Icons.delete),
                             ),
                             title: Text(todoList[i].title, maxLines: 1, overflow: TextOverflow.ellipsis,),
                             subtitle: Text(todoList[i].date + ' ' + todoList[i].time, maxLines: 1, overflow: TextOverflow.ellipsis,),
@@ -232,14 +262,39 @@ class _todoListState extends State<todoList> {
                             ],
                           )
                           : ListTile(
-                            leading: Checkbox(
+                            leading: _selectedTag == 0
+                            ? Checkbox(
                               value: checkList[i],
                               onChanged: (e) {
                                 setState(() {
                                   checkList[i] = !checkList[i];
-                                  showModalBottomSheet(context: context, builder: ((builder) => bottomSheet(todoList[i])),).then((value) => _getTodoList(search: _searchController.text, type: _typeController.text));
+                                  showModalBottomSheet(context: context, builder: ((builder) => bottomSheet(todoList[i])),).then((value) => _getTodoList(search: _searchController.text, type: _typeController.text, status: _selectedTag));
                                 });
                               },
+                            )
+                            : IconButton(
+                              onPressed: () => showDialog<String>(
+                                context: context,
+                                builder: (BuildContext context) => AlertDialog(
+                                  title: const Text('Confirm Delete'),
+                                  content: const Text('Are you sure to delete this TODO? It will remove the TODO from database.'),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, 'Cancel'),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => {
+                                        _deleteTodo(todoList[i]),
+                                        NotificationService.cancelNotification(todoList[i]),
+                                        Navigator.pop(context, 'OK')
+                                      },
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
+                                ),
+                              ).then((value) => _getTodoList(search: _searchController.text, type: _typeController.text, status: _selectedTag)),
+                              icon: Icon(Icons.delete),
                             ),
                             title: Text(todoList[i].title, maxLines: 1, overflow: TextOverflow.ellipsis,),
                             subtitle: Text(todoList[i].date + ' ' + todoList[i].time, maxLines: 1, overflow: TextOverflow.ellipsis,),
@@ -256,10 +311,37 @@ class _todoListState extends State<todoList> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            Navigator.pushNamed(context, '/add_todo', ).then((value) => _getTodoList(search: _searchController.text, type: _typeController.text));
+            Navigator.pushNamed(context, '/add_todo', ).then((value) => _getTodoList(search: _searchController.text, type: _typeController.text, status: _selectedTag));
             //.then((value) =>_getLastRow()).then((value) => NotificationService.addNotification(lastRow[0]));
           },
           child: const Icon(Icons.add),
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(Icons.check_box_outline_blank_outlined),
+              label: 'TODO',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.check_box_outlined),
+              label: 'Done',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.cancel_outlined),
+              label: 'Missed',
+            ),
+          ],
+          currentIndex: _selectedIndex,
+          selectedItemColor: Colors.amber[800],
+          onTap: (int index) {
+            if (_typeController.text == 'Upcoming' && index != 0) setState(() {
+              _typeController.text = 'All';
+            });
+            if (index == 2) _selectedTag = -1;
+            else _selectedTag = index;
+            _getTodoList(search: _searchController.text, type: _typeController.text, status: _selectedTag);
+            _selectedIndex = index;
+          },
         ),
       ),
     );
@@ -291,7 +373,7 @@ class _todoListState extends State<todoList> {
                 context: context,
                 builder: (BuildContext context) => AlertDialog(
                   title: const Text('Confirm Done'),
-                  content: const Text('Are you sure to mark this TODO done? It will move this TODO to \'Done\' tab (under construction).'),
+                  content: const Text('Are you sure to mark this TODO done? It will move this TODO to \'Done\' tab.'),
                   actions: <Widget>[
                     TextButton(
                       onPressed: () => Navigator.pop(context, 'Cancel'),
@@ -321,7 +403,7 @@ class _todoListState extends State<todoList> {
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(
                   builder: (context) => editTodo(valTodo: val),
-                ),).then((value) => value == true ? _getTodoList(search: _searchController.text, type: _typeController.text) : null);
+                ),).then((value) => value == true ? _getTodoList(search: _searchController.text, type: _typeController.text, status: _selectedTag) : null);
               },
               label: Text("Edit", style: TextStyle(color: Colors.black),),
             ),

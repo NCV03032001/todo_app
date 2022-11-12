@@ -8,8 +8,8 @@ class NotificationService {
   static final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   static Future initialize(FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) async {
-    final AndroidInitializationSettings initializationSettingsAndroid =
-    AndroidInitializationSettings('app_icon');
+    final AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+    await flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestPermission();
 
     final DarwinInitializationSettings  initializationSettingsIOS =
     DarwinInitializationSettings (
@@ -21,15 +21,13 @@ class NotificationService {
     final InitializationSettings initializationSettings = InitializationSettings(
         android: initializationSettingsAndroid,
         iOS: initializationSettingsIOS,
-        macOS: null); // <------
+    ); // <------
 
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   }
 
   static Future addNotification(aTodo todo) async {
     var scheduledDate = DateTime.parse("${todo.date} ${todo.time}").subtract(Duration(minutes: 10));
-
-    print(todo);
     var scheduledDateTz = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5));
 
     if (scheduledDate.isAfter(DateTime.now())){
@@ -42,15 +40,17 @@ class NotificationService {
     await flutterLocalNotificationsPlugin.zonedSchedule(
       todo.id,
       todo.title,
-      todo.description,
+      'Cần thực hiện \"${todo.title}\" vào lúc ${todo.time} ngày ${todo.date}!',
       scheduledDateTz,
       const NotificationDetails(
           android: AndroidNotificationDetails(
             'whatever',
             'whatever',
+            icon: "@mipmap/ic_launcher",
             playSound: true,
             importance: Importance.max,
             priority: Priority.high,
+            enableVibration: true,
           ),
           iOS: DarwinNotificationDetails(
             sound: 'notification',

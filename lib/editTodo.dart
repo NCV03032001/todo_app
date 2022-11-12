@@ -396,9 +396,8 @@ class _editTodoState extends State<editTodo> {
                         onPressed: () => {
                           if (_addFormKey.currentState!.validate() && checkDateTimeConflict(_dateController.text, _timeController.text)) {
                             newTodo = new aTodo(id: widget.valTodo.id, title: _titleController.text, description: _desController.text, date: _dateController.text, time: _timeController.text, status: widget.valTodo.status),
-                            print(widget.valTodo.id),
                             _editTodo(newTodo),
-                            //NotificationService.cancelNotification(newTodo),
+                            NotificationService.cancelNotification(newTodo),
                             NotificationService.addNotification(newTodo),
                             Navigator.pop(context, true),
                           }

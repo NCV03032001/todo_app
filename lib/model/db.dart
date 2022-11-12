@@ -28,6 +28,13 @@ class DB {
     final db = await DB.createData();
     List<Map<String, dynamic>> maps = [];
 
+    List<Map<String, dynamic>> test = [];
+    await db.rawQuery('UPDATE todo '
+        'SET status = -1 '
+        'WHERE ((date < DATE(\'now\', \'-5 minutes\', \'localtime\')) '
+          'OR (date = DATE(\'now\', \'-5 minutes\', \'localtime\') AND time < TIME(\'now\', \'-5 minutes\', \'localtime\')))'
+        'AND status = 0;');
+
     if (type == '' || type == 'Today') {
       String today = formatterDate.format(DateTime.now());
 

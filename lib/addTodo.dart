@@ -1,3 +1,4 @@
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:todo_app/model/db.dart';
@@ -107,8 +108,9 @@ class _addTodoState extends State<addTodo> {
 
   @override
   void initState() {
-    tzData.initializeTimeZones();
     super.initState();
+    tzData.initializeTimeZones();
+    //NotificationService.initialize(NotificationService.flutterLocalNotificationsPlugin);
     _getLastRow();
   }
 
@@ -406,13 +408,10 @@ class _addTodoState extends State<addTodo> {
                         onPressed: () {
                           if (_addFormKey.currentState!.validate() && checkDateTimeConflict(_dateController.text, _timeController.text)) {
                             index = index + 1;
-                            print(index);
                             if (_desController.text.isEmpty) {
-                              _desController.text = 'Dkm tha t';
+                              _desController.text = '';
                             }
-                            print(_desController.text);
                             newTodo = new aTodo(id: index,title: _titleController.text, description: _desController.text, date: _dateController.text, time: _timeController.text, status: 0);
-                            print(newTodo);
                             _insertTodo(newTodo);
                             NotificationService.addNotification(newTodo);
                             Navigator.pop(context, true);
